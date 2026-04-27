@@ -1,0 +1,3 @@
+@'
+testuser    Cleartext-Password := "testpass"
+'@ | Out-File -FilePath "C:\Users\Nyali Ayec Pc 06\angaza\radius\etc\freeradius\users" -Encoding ASCII -Force

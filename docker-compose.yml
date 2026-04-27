@@ -1,0 +1,89 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: angaza-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: anagaza
+      POSTGRES_PASSWORD: anagaza123
+      POSTGRES_DB: anagaza
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anagaza"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:7
+    container_name: angaza-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  radius:
+    build:
+      context: ./radius
+      dockerfile: Dockerfile
+    container_name: angaza-radius
+    restart: unless-stopped
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./radius/etc/freeradius:/etc/freeradius
+    environment:
+      - RADIUS_SECRET=FbFN2abooAxvIc/kJGEz1g==
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: angaza-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_HOST: angaza-postgres
+      DB_PORT: "5432"
+      DB_USERNAME: anagaza
+      DB_PASSWORD: anagaza123
+      DB_NAME: anagaza
+      REDIS_URL: redis://angaza-redis:6379
+      JWT_SECRET: EfA9GHP7V1WQze/tWWK4W5K3hlzBXgWdRMNRUt0lcOrfIwXLE9gbD6cZCrf1Jyqe
+      RADIUS_SECRET: FbFN2abooAxvIc/kJGEz1g==
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    image: node:20-alpine
+    container_name: angaza-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
