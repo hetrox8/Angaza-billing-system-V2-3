@@ -1,5 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, BeforeInsert } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, BeforeInsert } from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
+import { AuditLog } from '../../audit-logs/entities/audit-log.entity';
+import { Voucher } from '../../vouchers/entities/voucher.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 export enum UserRole {
@@ -14,7 +17,6 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // FIX: auto-generate uuid before insert
   @Column({ unique: true })
   uuid: string;
 
@@ -53,6 +55,15 @@ export class User {
 
   @Column({ default: false })
   phoneVerified: boolean;
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
+
+  @OneToMany(() => AuditLog, (auditLog) => auditLog.user)
+  auditLogs: AuditLog[];
+
+  @OneToMany(() => Voucher, (voucher) => voucher.createdBy)
+  createdVouchers: Voucher[];
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

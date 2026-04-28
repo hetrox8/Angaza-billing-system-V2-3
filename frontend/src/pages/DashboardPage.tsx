@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { companiesApi, Company } from '../services/api'
 import { useAuth } from '../context/AuthContext'
-import styles from './DashboardPage.module.css'
+import { Card, Col, Row, Statistic, Table, Typography, Alert, Spin, Flex, Avatar, Tag, Button } from 'antd'
+
+const { Title, Text, Paragraph } = Typography
 
 interface Stat {
   label: string
@@ -50,104 +52,132 @@ export default function DashboardPage() {
     },
   ]
 
+  const columns = [
+    {
+      title: 'Company',
+      key: 'company',
+      render: (c: Company) => (
+        <Flex align="center" gap="small">
+          <Avatar size={40} className="bg-primary text-white">
+            {c.name[0].toUpperCase()}
+          </Avatar>
+          <Flex vertical>
+            <Text strong>{c.name}</Text>
+            <Text type="secondary" className="text-xs">{c.email}</Text>
+          </Flex>
+        </Flex>
+      ),
+    },
+    {
+      title: 'License',
+      key: 'licenseType',
+      render: (c: Company) => (
+        <Tag color={c.licenseType === 'trial' ? 'red' : c.licenseType === 'monthly' ? 'blue' : c.licenseType === 'annual' ? 'green' : 'purple' }>
+          {c.licenseType}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Users',
+      key: 'users',
+      render: (c: Company) => c.users?.length ?? 0,
+    },
+    {
+      title: 'Status',
+      key: 'status',
+      render: (c: Company) => (
+        <Tag color={c.isActive ? 'green' : 'red' }>
+          {c.isActive ? 'Active' : 'Inactive'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Joined',
+      key: 'createdAt',
+      render: (c: Company) => new Date(c.createdAt).toLocaleDateString(),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (c: Company) => (
+        <Button type="link" href={`/companies/${c.id}`}>View</Button>
+      ),
+    },
+  ]
+
   return (
-    <div className={styles.page}>
+    <div className="p-6">
       {/* Header */}
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Dashboard</h1>
-          <p className={styles.sub}>
+      <Flex justify="space-between" align="center" className="mb-6">
+        <Flex vertical>
+          <Title level={2} className="m-0">Dashboard</Title>
+          <Paragraph className="m-0">
             Good to see you, <strong>{user?.firstName}</strong>. Here's your system overview.
-          </p>
-        </div>
-        <div className={styles.badge}>
-          <span className={styles.dot} />
+          </Paragraph>
+        </Flex>
+        <Tag color="green" icon={<span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}>
           System Online
-        </div>
-      </div>
+        </Tag>
+      </Flex>
 
       {error && (
-        <div className={styles.errorBanner} role="alert">
-          <span>⚠</span> {error} — check that the backend is running on port 3000.
-        </div>
+        <Alert
+          message={error}
+          type="error"
+          showIcon
+          closable
+          onClose={() => setError('')}
+          className="mb-6"
+        />
       )}
 
-      {/* Stats */}
-      <div className={styles.statsGrid}>
+      {/* Stats Grid */}
+      <Row gutter={16} className="mb-6">
         {stats.map((s, i) => (
-          <div
-            key={s.label}
-            className={`${styles.statCard} fade-up fade-up-${i + 1}`}
-            style={{ '--accent-color': s.color } as React.CSSProperties}
-          >
-            <span className={styles.statLabel}>{s.label}</span>
-            <span className={styles.statValue}>{s.value}</span>
-            <span className={styles.statSub}>{s.sub}</span>
-            <div className={styles.statBar} />
-          </div>
+          <Col xs={24} sm={12} lg={6} key={s.label}>
+            <Card
+              className="h-full"
+              styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
+            >
+              <Flex flex={1} vertical gap="small">
+                <Text type="secondary">{s.label}</Text>
+                <Title level={2} className="m-0">{s.value}</Title>
+                <Text type="secondary" className="text-xs">{s.sub}</Text>
+              </Flex>
+              <div className="h-2 rounded-full bg-gradient-to-r from-primary to-blue-500 mt-4" />
+            </Card>
+          </Col>
         ))}
-      </div>
+      </Row>
 
-      {/* Recent companies table */}
-      <div className={`${styles.section} fade-up fade-up-4`}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Recent Companies</h2>
-          <a href="/companies" className={styles.seeAll}>View all →</a>
-        </div>
+      {/* Recent Companies Table */}
+      <Card title="Recent Companies">
+        <Flex justify="space-between" align="center" className="mb-4">
+          <Title level={4} className="m-0">Recent Companies</Title>
+          <Button type="link" href="/companies">View all</Button>
+        </Flex>
 
         {loading ? (
-          <div className={styles.loader}>
-            <div className={styles.spinner} />
-            <span>Loading companies…</span>
-          </div>
+          <Flex vertical align="center" gap="small" className="py-8">
+            <Spin size="large" />
+            <Text type="secondary">Loading companies…</Text>
+          </Flex>
         ) : companies.length === 0 ? (
-          <div className={styles.empty}>
-            <p>No companies registered yet.</p>
-            <p>Head to <a href="/companies">Companies</a> to add your first ISP.</p>
-          </div>
+          <Flex vertical align="center" gap="small" className="py-8">
+            <Text type="secondary">No companies registered yet.</Text>
+            <Text type="secondary">
+              Head to <Button type="link" href="/companies">Companies</Button> to add your first ISP.
+            </Text>
+          </Flex>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Company</th>
-                <th>License</th>
-                <th>Users</th>
-                <th>Status</th>
-                <th>Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {companies.slice(0, 8).map((c) => (
-                <tr key={c.id}>
-                  <td>
-                    <div className={styles.companyCell}>
-                      <div className={styles.companyAvatar}>
-                        {c.name[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <div className={styles.companyName}>{c.name}</div>
-                        <div className={styles.companyEmail}>{c.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`${styles.badge2} ${styles[c.licenseType] || ''}`}>
-                      {c.licenseType}
-                    </span>
-                  </td>
-                  <td>{c.users?.length ?? 0}</td>
-                  <td>
-                    <span className={`${styles.statusDot} ${c.isActive ? styles.active : styles.inactive}`}>
-                      {c.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>{new Date(c.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table
+            columns={columns}
+            dataSource={companies.slice(0, 8)}
+            rowKey="id"
+            pagination={false}
+          />
         )}
-      </div>
+      </Card>
     </div>
   )
 }

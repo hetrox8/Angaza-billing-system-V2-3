@@ -1,6 +1,6 @@
 import { IsString, IsEmail, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LicenseType } from '../../companies/entities/company.entity';
+import { LicenseType } from '../../companies/entities/license-type.enum';
 
 export class CreateCompanyDto {
   @ApiProperty({ example: 'Mwananchi Telecom' })

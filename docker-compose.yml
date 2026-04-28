@@ -42,7 +42,7 @@ services:
     volumes:
       - ./radius/etc/freeradius:/etc/freeradius
     environment:
-      - RADIUS_SECRET=FbFN2abooAxvIc/kJGEz1g==
+      - RADIUS_SECRET=${RADIUS_SECRET}
 
   backend:
     build:
@@ -51,15 +51,16 @@ services:
     container_name: angaza-backend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       DB_HOST: angaza-postgres
       DB_PORT: "5432"
       DB_USERNAME: anagaza
       DB_PASSWORD: anagaza123
       DB_NAME: anagaza
       REDIS_URL: redis://angaza-redis:6379
-      JWT_SECRET: EfA9GHP7V1WQze/tWWK4W5K3hlzBXgWdRMNRUt0lcOrfIwXLE9gbD6cZCrf1Jyqe
-      RADIUS_SECRET: FbFN2abooAxvIc/kJGEz1g==
+      JWT_SECRET: ${JWT_SECRET}
+      RADIUS_SECRET: ${RADIUS_SECRET}
+      RADIUS_SERVER_IP: radius
       PORT: "3000"
     ports:
       - "3000:3000"
@@ -75,10 +76,9 @@ services:
     working_dir: /app
     volumes:
       - ./frontend:/app
-      - /app/node_modules
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     environment:
-      VITE_API_URL: http://localhost:3000
+      VITE_API_URL: http://angaza-backend:3000
     ports:
       - "5173:5173"
     depends_on:
